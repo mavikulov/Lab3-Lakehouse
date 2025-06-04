@@ -1,8 +1,5 @@
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
-from pyspark.ml.regression import RandomForestRegressor
-from pyspark.ml.feature import VectorAssembler
-from pyspark.ml import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -50,6 +47,7 @@ def preprocess_data(df):
     
     logger.info(f"Final clean data count: {df.count()}")
     return df
+
 
 def train_model(df):
     logger.info("Starting model training")

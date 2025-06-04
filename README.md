@@ -1,7 +1,8 @@
 # Lab3-Lakehouse
 ## Данные 
 
-Взят следующий датасет: [NYC Yellow Taxi Trip Data](https://www.kaggle.com/datasets/elemento/nyc-yellow-taxi-trip-data).   Набор данных обрезан до 100000 сэмплов. 
+Взят следующий датасет: [NYC Yellow Taxi Trip Data](https://www.kaggle.com/datasets/elemento/nyc-yellow-taxi-trip-data).   Набор данных обрезан до 100000 сэмплов.  
+
 **Цель** — предсказать дневную выручку такси(*daily_revenue*) за день на основе погодных, временных и поведенческих признаков.
 
 ## Модель

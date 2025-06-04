@@ -2,6 +2,7 @@ import shutil
 import os
 
 import mlflow
+import pandas as pd
 from delta import *
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
@@ -141,10 +142,10 @@ class NYCTaxiETL:
         return hourly_demand
     
     def train_ml_model(self):
-        """Train machine learning model"""
         logger.info("Starting ML model training")
         
         mlflow.set_tracking_uri("http://localhost:5000")
+        mlflow.set_experiment("NYC_Taxi_Revenue_Prediction")
         
         df = self.spark.read.format("delta").load("/app/data/gold/daily_revenue_by_location")
         pandas_df = df.toPandas()
@@ -154,7 +155,31 @@ class NYCTaxiETL:
             
             model, metrics = train_model(pandas_df)
             
-            # Удаляем старую модель, если она существует
+            mlflow.log_param("model_type", "RandomForest")
+            mlflow.log_param("n_estimators", 20)
+            mlflow.log_param("random_state", 42)
+            
+            mlflow.log_metrics(metrics)
+            
+            input_example = pandas_df.iloc[0:1][['PULocationID', 'DOLocationID', 'day_of_week', 'month', 'avg_distance']]
+            mlflow.sklearn.log_model(
+                sk_model=model,
+                artifact_path="taxi_revenue_model",
+                input_example=input_example,
+                registered_model_name="TaxiRevenuePredictor"
+            )
+            
+            import matplotlib.pyplot as plt
+            plt.figure(figsize=(10, 5))
+            feature_importances = pd.Series(model.feature_importances_, index=input_example.columns)
+            feature_importances.nlargest(10).plot(kind='barh')
+            plt.title("Feature Importances")
+            mlflow.log_figure(plt.gcf(), "feature_importances.png")
+            plt.close()
+            
+            logger.info(f"Successfully logged model to MLflow. Run ID: {run.info.run_id}")
+            logger.info(f"Model metrics: {metrics}")
+            
             model_path = "/app/data/models/taxi_revenue_predictor"
             try:
                 shutil.rmtree(model_path)
@@ -162,14 +187,8 @@ class NYCTaxiETL:
             except FileNotFoundError:
                 logger.info(f"No existing model found at {model_path}")
             
-            # Создаем директорию заново
             os.makedirs(model_path, exist_ok=True)
-            
-            # Сохраняем новую модель
             mlflow.sklearn.save_model(model, model_path)
-            
-            logger.info(f"Model saved to {model_path}")
-            logger.info(f"Model metrics: {metrics}")
             
             return model, metrics
 
